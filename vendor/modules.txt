@@ -2,11 +2,24 @@
 ## explicit
 github.com/bmatsuo/lmdb-go/internal/lmdbarch
 github.com/bmatsuo/lmdb-go/lmdb
+# github.com/creack/pty v1.1.7
+github.com/creack/pty
 # github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 ## explicit
 github.com/davecgh/go-spew/spew
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+## explicit
+github.com/dgrijalva/jwt-go
+# github.com/golang/protobuf v1.3.1
+github.com/golang/protobuf/proto
+# github.com/gorilla/websocket v1.4.2
+## explicit
+github.com/gorilla/websocket
 # github.com/konsorten/go-windows-terminal-sequences v1.0.1
 github.com/konsorten/go-windows-terminal-sequences
+# github.com/kr/pty v1.1.8
+## explicit
+github.com/kr/pty
 # github.com/mendersoftware/mender-artifact v0.0.0-20200327144921-a6d237202052
 ## explicit
 github.com/mendersoftware/mender-artifact/areader
@@ -47,11 +60,16 @@ github.com/ungerik/go-sysfs
 # github.com/urfave/cli/v2 v2.2.0 => github.com/mendersoftware/cli/v2 v2.1.1-minimal
 ## explicit
 github.com/urfave/cli/v2
+# github.com/vmihailenco/msgpack v4.0.4+incompatible
+## explicit
+github.com/vmihailenco/msgpack
+github.com/vmihailenco/msgpack/codes
 # golang.org/x/crypto v0.0.0-20190923035154-9ee001bba392
 ## explicit
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 ## explicit
+golang.org/x/net/context
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
@@ -61,11 +79,23 @@ golang.org/x/net/idna
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.3.2
-## explicit
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
+# google.golang.org/appengine v1.6.6
+## explicit
+google.golang.org/appengine
+google.golang.org/appengine/datastore
+google.golang.org/appengine/datastore/internal/cloudkey
+google.golang.org/appengine/datastore/internal/cloudpb
+google.golang.org/appengine/internal
+google.golang.org/appengine/internal/app_identity
+google.golang.org/appengine/internal/base
+google.golang.org/appengine/internal/datastore
+google.golang.org/appengine/internal/log
+google.golang.org/appengine/internal/modules
+google.golang.org/appengine/internal/remote_api
 # gopkg.in/yaml.v2 v2.3.0
 ## explicit
 # gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
