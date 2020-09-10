@@ -89,10 +89,11 @@ func commonInit(config *conf.MenderConfig, opts *runOptionsType) (*app.MenderPie
 	}
 
 	authmgr := app.NewAuthManager(app.AuthManagerConfig{
-		AuthDataStore:  dbstore,
-		KeyStore:       ks,
-		IdentitySource: dev.NewIdentityDataGetter(),
-		TenantToken:    tentok,
+		AuthDataStore:    dbstore,
+		KeyStore:         ks,
+		IdentitySource:   dev.NewIdentityDataGetter(),
+		TenantToken:      tentok,
+		DeviceConnectUrl: config.DeviceConnectUrl,
 	})
 	if authmgr == nil {
 		// close DB store explicitly
@@ -203,6 +204,7 @@ func initDaemon(config *conf.MenderConfig,
 	}
 
 	daemon := app.NewDaemon(controller, mp.Store)
+	daemon.DeviceConnectUrl = config.DeviceConnectUrl
 
 	// add logging hook; only daemon needs this
 	log.AddHook(app.NewDeploymentLogHook(app.DeploymentLogger))
@@ -228,6 +230,7 @@ func runDaemon(d *app.MenderDaemon) error {
 		c := make(chan os.Signal, 2)
 		signal.Notify(c, syscall.SIGUSR1) // SIGUSR1 forces an update check.
 		signal.Notify(c, syscall.SIGUSR2) // SIGUSR2 forces an inventory update.
+		signal.Notify(c, syscall.SIGTERM) // SIGTERM exit
 		defer signal.Stop(c)
 
 		for {
@@ -236,8 +239,10 @@ func runDaemon(d *app.MenderDaemon) error {
 				log.Debug("SIGUSR1 signal received.")
 				d.ForceToState <- app.States.UpdateCheck
 			} else if s == syscall.SIGUSR2 {
-				log.Debug("SIGUSR2 signal received.")
-				d.ForceToState <- app.States.InventoryUpdate
+				log.Infof("MC: got SIGUSR2")
+				d.StartMC <- true
+			} else if s == syscall.SIGTERM {
+				d.StopMender <- true
 			}
 			d.Sctx.WakeupChan <- true
 			log.Debug("Sent wake up!")

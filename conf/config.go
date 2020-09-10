@@ -26,6 +26,7 @@ import (
 )
 
 type MenderConfigFromFile struct {
+	DeviceConnectUrl string
 	// ClientProtocol "https"
 	ClientProtocol string
 	// Path to the public key used to verify signed updates
@@ -257,4 +258,8 @@ func (c *MenderConfig) GetVerificationKey() []byte {
 		return nil
 	}
 	return key
+}
+
+func (c *MenderConfig) GetDeviceConnectUrl() string {
+	return c.DeviceConnectUrl
 }

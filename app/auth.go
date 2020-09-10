@@ -14,9 +14,14 @@
 package app
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
 	"os"
 	"strings"
+	"syscall"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/mendersoftware/mender/client"
 	"github.com/mendersoftware/mender/datastore"
 	dev "github.com/mendersoftware/mender/device"
@@ -45,17 +50,19 @@ const (
 )
 
 type MenderAuthManager struct {
-	store       store.Store
-	keyStore    *store.Keystore
-	idSrc       dev.IdentityDataGetter
-	tenantToken client.AuthToken
+	store            store.Store
+	keyStore         *store.Keystore
+	idSrc            dev.IdentityDataGetter
+	tenantToken      client.AuthToken
+	deviceConnectUrl string
 }
 
 type AuthManagerConfig struct {
-	AuthDataStore  store.Store            // authorization data store
-	KeyStore       *store.Keystore        // key storage
-	IdentitySource dev.IdentityDataGetter // provider of identity data
-	TenantToken    []byte                 // tenant token
+	AuthDataStore    store.Store            // authorization data store
+	KeyStore         *store.Keystore        // key storage
+	IdentitySource   dev.IdentityDataGetter // provider of identity data
+	TenantToken      []byte                 // tenant token
+	DeviceConnectUrl string
 }
 
 func NewAuthManager(conf AuthManagerConfig) AuthManager {
@@ -66,10 +73,11 @@ func NewAuthManager(conf AuthManagerConfig) AuthManager {
 	}
 
 	mgr := &MenderAuthManager{
-		store:       conf.AuthDataStore,
-		keyStore:    conf.KeyStore,
-		idSrc:       conf.IdentitySource,
-		tenantToken: client.AuthToken(conf.TenantToken),
+		store:            conf.AuthDataStore,
+		keyStore:         conf.KeyStore,
+		idSrc:            conf.IdentitySource,
+		tenantToken:      client.AuthToken(conf.TenantToken),
+		deviceConnectUrl: conf.DeviceConnectUrl,
 	}
 
 	if err := mgr.keyStore.Load(); err != nil && !store.IsNoKeys(err) {
@@ -140,14 +148,55 @@ func (m *MenderAuthManager) MakeAuthRequest() (*client.AuthRequest, error) {
 	}, nil
 }
 
+type TenantMC struct {
+	TenantId string `json:"tenant_id"`
+}
+
+type DeviceMC struct {
+	DeviceId string `json:"device_id"`
+}
+
 func (m *MenderAuthManager) RecvAuthResponse(data []byte) error {
 	if len(data) == 0 {
 		return errors.New("empty auth response data")
 	}
 
+	log.Infof("RecvAuthResponse got token: '%s'", string(data))
+	parser := jwt.Parser{}
+	claims := jwt.MapClaims{}
+	_, _, _ = parser.ParseUnverified(string(data), &claims)
+
 	if err := m.store.WriteAll(datastore.AuthTokenName, data); err != nil {
 		return errors.Wrapf(err, "failed to save auth token")
 	}
+
+	t := TenantMC{TenantId: claims["mender.tenant"].(string)}
+	d := DeviceMC{DeviceId: claims["sub"].(string)}
+	log.Infof("MC: running POST '%v'", t)
+	providesBody, err := json.Marshal(t)
+
+	r := bytes.NewBuffer(providesBody)
+	postReq, err := http.NewRequest(http.MethodPost, "http://"+m.deviceConnectUrl+"/api/internal/v1/deviceconnect/tenants", r)
+	postReq.Header.Add("Content-Type", "application/json")
+	client := &http.Client{}
+	response, err := client.Do(postReq)
+	log.Infof("MC: POST %v : %v,%v", t, response, err)
+
+	log.Infof("MC: running POST '%v'", d)
+	providesBody, err = json.Marshal(d)
+	r = bytes.NewBuffer(providesBody)
+	postReq, err = http.NewRequest(http.MethodPost, "http://"+m.deviceConnectUrl+"/api/internal/v1/deviceconnect/tenants/5abcb6de7a673a0001287c71/devices", r)
+	postReq.Header.Add("Content-Type", "application/json")
+	client = &http.Client{}
+	response, err = client.Do(postReq)
+	log.Infof("MC: POST %v : %v,%v", d, response, err)
+
+	pid := os.Getpid()
+	log.Infof("MC: RecvAuthResponse pid: %d", pid)
+	p, err := os.FindProcess(pid)
+	log.Infof("MC: RecvAuthResponse p,err %v,%v", p, err)
+	err = p.Signal(syscall.SIGUSR2)
+	log.Infof("MC: RecvAuthResponse since we got auth request response we sent the signal to start. ('%v')", err)
 	return nil
 }
 

@@ -38,6 +38,7 @@ type Controller interface {
 	IsAuthorized() bool
 	Authorize() menderError
 
+	GetAuthToken() (string, error)
 	GetCurrentArtifactName() (string, error)
 	GetUpdatePollInterval() time.Duration
 	GetInventoryPollInterval() time.Duration
@@ -185,7 +186,14 @@ func (m *Mender) loadAuth() menderError {
 	}
 
 	m.authToken = code
+	log.Infof("loadAuth: m.authToken=%s", code)
+
 	return nil
+}
+
+func (m *Mender) GetAuthToken() (string, error) {
+	t, err := m.authMgr.AuthToken()
+	return string(t), err
 }
 
 func (m *Mender) IsAuthorized() bool {
@@ -205,6 +213,8 @@ func (m *Mender) Authorize() menderError {
 	var rsp []byte
 	var err error
 	var server *client.MenderServer
+
+	log.Infof("Authorize starting, m.authMgr: '%v'", m.authMgr)
 
 	if m.authMgr.IsAuthorized() {
 		log.Info("authorization data present and valid, skipping authorization attempt")

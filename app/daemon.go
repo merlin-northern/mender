@@ -15,6 +15,7 @@ package app
 
 import (
 	"github.com/mendersoftware/mender/datastore"
+	"github.com/mendersoftware/mender/mc"
 	"github.com/mendersoftware/mender/store"
 	"github.com/mendersoftware/mender/system"
 	"github.com/pkg/errors"
@@ -24,11 +25,14 @@ import (
 // Config section
 
 type MenderDaemon struct {
-	Mender       Controller
-	Sctx         StateContext
-	Store        store.Store
-	ForceToState chan State
-	stop         bool
+	DeviceConnectUrl string
+	Mender           Controller
+	Sctx             StateContext
+	Store            store.Store
+	ForceToState     chan State
+	StartMC          chan bool
+	StopMender       chan bool
+	stop             bool
 }
 
 func NewDaemon(mender Controller, store store.Store) *MenderDaemon {
@@ -42,6 +46,8 @@ func NewDaemon(mender Controller, store store.Store) *MenderDaemon {
 		},
 		Store:        store,
 		ForceToState: make(chan State, 1),
+		StartMC:      make(chan bool, 1),
+		StopMender:   make(chan bool, 1),
 	}
 	return &daemon
 }
@@ -67,9 +73,28 @@ func (d *MenderDaemon) Run() error {
 	// set the first state transition
 	var toState State = d.Mender.GetCurrentState()
 	cancelled := false
+	t, _ := d.Mender.GetAuthToken()
+	if len(t) > 0 {
+		log.Infof("on startup: starting MC with token: '%s' and deviceconnect url: %s", t, d.DeviceConnectUrl)
+		go mc.StartLiveConnect(t, d.DeviceConnectUrl)
+	}
 	for {
+		log.Info("Run main loop.")
 		// If signal SIGUSR1 or SIGUSR2 is received, force the state-machine to the correct state.
 		select {
+		case stopDaemon := <-d.StopMender:
+			switch stopDaemon {
+			case true:
+				mc.StopLiveConnect()
+				return nil
+			}
+		case startMC := <-d.StartMC:
+			switch startMC {
+			case true:
+				t, _ := d.Mender.GetAuthToken()
+				log.Infof("starting MC with token: '%s'", t)
+				go mc.StartLiveConnect(t, d.DeviceConnectUrl)
+			}
 		case nState := <-d.ForceToState:
 			switch toState.(type) {
 			case *idleState,
@@ -100,6 +125,7 @@ func (d *MenderDaemon) Run() error {
 			break
 		}
 		if d.shouldStop() {
+			mc.StopLiveConnect()
 			return nil
 		}
 	}
