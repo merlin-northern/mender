@@ -15,6 +15,7 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/mendersoftware/mender/conf"
 	"testing"
 
 	"github.com/mendersoftware/mender/client"
@@ -81,7 +82,7 @@ func TestAuthManager(t *testing.T) {
 	assert.NoError(t, am.GenerateKey())
 	assert.True(t, am.HasKey())
 
-	assert.False(t, am.IsAuthorized())
+	assert.False(t, am.IsAuthorized(conf.MenderConfig{}))
 
 	code, err := am.AuthToken()
 	assert.Equal(t, noAuthToken, code)
@@ -190,5 +191,5 @@ func TestAuthManagerResponse(t *testing.T) {
 	tokdata, err := ms.ReadAll(datastore.AuthTokenName)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("fooresp"), tokdata)
-	assert.True(t, am.IsAuthorized())
+	assert.True(t, am.IsAuthorized(conf.MenderConfig{}))
 }

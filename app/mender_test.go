@@ -363,6 +363,10 @@ func (t *testAuthDataMessenger) RecvAuthResponse(data []byte, tenantToken, serve
 	return t.rspError
 }
 
+func (t *testAuthDataMessenger) AuthServerURL() (string, error) {
+	return "",t.rspError
+}
+
 type testAuthManager struct {
 	authorized     bool
 	authtoken      client.AuthToken
