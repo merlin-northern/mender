@@ -33,6 +33,8 @@ type Transaction interface {
 	ReadAll(name string) ([]byte, error)
 	// write all of data to entry 'name'
 	WriteAll(name string, data []byte) error
+	// write all of the key-value pairs in one transaction
+	WriteMap(m map[string][]byte) error
 	// remove an entry
 	Remove(name string) error
 }

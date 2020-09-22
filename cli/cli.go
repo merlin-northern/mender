@@ -380,7 +380,7 @@ func (runOptions *runOptionsType) commonCLIHandler(
 	ctx *cli.Context) (*conf.MenderConfig,
 	installer.DualRootfsDevice, error) {
 
-		log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.DebugLevel)
 	if ctx.Command.Name != "install" && ctx.Args().Len() > 0 {
 		return nil, nil, errors.Errorf(
 			errMsgAmbiguousArgumentsGivenF,

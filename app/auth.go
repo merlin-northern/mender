@@ -104,13 +104,18 @@ func (m *MenderAuthManager) IsAuthorized(config conf.MenderConfig) bool {
 	if err != nil {
 		return false
 	}
-	if config.TenantToken != tenantToken {
+	serverUrl, err := m.AuthServerURL()
+	if err != nil {
+		return false
+	}
+
+	if config.TenantToken != tenantToken || config.ServerURL != serverUrl {
 		log.Infof("men-3420    IsAuthorized config.TenantToken:%s != tenantToken:%s; err=%v.", config.TenantToken, tenantToken, err)
 		// m.UpdateAuthTenantToken(config.TenantToken) // do we need this?
 		m.RemoveAuthToken()
-		a,_ := m.AuthToken()
-		t,_:=m.AuthTenantToken()
-		log.Infof("men-3420    IsAuthorized currently: removed AuthToken, it is: '%s' reset tenant token: '%s', returning false;",a,t)
+		a, _ := m.AuthToken()
+		t, _ := m.AuthTenantToken()
+		log.Infof("men-3420    IsAuthorized currently: removed AuthToken, it is: '%s' reset tenant token: '%s', returning false;", a, t)
 		return false
 	}
 
@@ -178,10 +183,18 @@ func (m *MenderAuthManager) RecvAuthResponse(data []byte, tenantToken string, se
 		return errors.New("empty auth response data")
 	}
 
+	if err := m.store.WriteMap(map[string][]byte{
+		datastore.AuthTokenName:       data,
+		datastore.AuthTenantTokenName: []byte(tenantToken),
+		datastore.AuthServerURLName:   []byte(serverURl),
+	}); err != nil {
+		return errors.Wrapf(err, "failed to save auth token, tenant token, server url")
+	}
+
 	if err := m.store.WriteAll(datastore.AuthTokenName, data); err != nil {
 		return errors.Wrapf(err, "failed to save auth token")
 	}
-	log.Infof("men-3420 writing k:%s v:%s",datastore.AuthTenantTokenName,tenantToken)
+	log.Infof("men-3420 writing k:%s v:%s", datastore.AuthTenantTokenName, tenantToken)
 	if err := m.store.WriteAll(datastore.AuthTenantTokenName, []byte(tenantToken)); err != nil {
 		return errors.Wrapf(err, "failed to save tenant token")
 	}

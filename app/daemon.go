@@ -84,28 +84,27 @@ func (d *MenderDaemon) Run() error {
 		// If signal SIGUSR1 or SIGUSR2 is received, force the state-machine to the correct state.
 		select {
 		case event := <-watcher.Events:
-			log.Infof("men-3420 config file event: %v", event)
+			log.Debugf("config file event: %v", event)
 			if event.Op == fsnotify.Remove || event.Op == fsnotify.Write || event.Op == fsnotify.Rename {
-				log.Infof("men-3420       sending SIGHUP to itself and restarting")
+				log.Infof("config file change detected, will restart")
 				pid := os.Getpid()
 				p, _ := os.FindProcess(pid)
 				if p != nil {
 					p.Signal(syscall.SIGHUP)
 				}
 			} else {
-				log.Infof("men-3420 ignoring event: %v", event)
+				log.Debugf("ignoring config file  event: %v", event)
 			}
 		case configReload := <-d.ReloadConfig:
 			switch configReload {
 			case true:
 				log.Info("men-3420 restarting on SIGHUP")
-				//conf.LoadConfig()
 				err := syscall.Exec(os.Args[0], os.Args, os.Environ())
 				if nil != err {
 					log.Infof("failed to restart: %s.", err.Error())
 				} else {
-					//it will never normally come to this,
-					// syscall.Exec replaces the current image.
+					//it will never normally come to this, syscall.Exec replaces
+					//the current image.
 					return nil
 				}
 			}

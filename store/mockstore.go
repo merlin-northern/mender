@@ -32,10 +32,14 @@ func (ms *MockStore) ReadAll(name string) ([]byte, error) {
 	return ret.Get(0).([]byte), ret.Error(1)
 }
 
+func (ms *MockStore) WriteMap(m map[string][]byte) error {
+	ret := ms.Called(m)
+	return ret.Error(0)
+}
+
 func (ms *MockStore) WriteAll(name string, data []byte) error {
 	ret := ms.Called(name, data)
 	return ret.Error(0)
-
 }
 
 func (ms *MockStore) Close() error {
