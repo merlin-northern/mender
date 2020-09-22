@@ -190,17 +190,21 @@ func (m *MenderAuthManager) RecvAuthResponse(data []byte, tenantToken string, se
 	}); err != nil {
 		return errors.Wrapf(err, "failed to save auth token, tenant token, server url")
 	}
+	log.Debugf("RecvAuthResponse wrote %s,%s,%s.",
+		datastore.AuthTokenName,
+		datastore.AuthTenantTokenName,
+		datastore.AuthServerURLName)
 
-	if err := m.store.WriteAll(datastore.AuthTokenName, data); err != nil {
-		return errors.Wrapf(err, "failed to save auth token")
-	}
-	log.Infof("men-3420 writing k:%s v:%s", datastore.AuthTenantTokenName, tenantToken)
-	if err := m.store.WriteAll(datastore.AuthTenantTokenName, []byte(tenantToken)); err != nil {
-		return errors.Wrapf(err, "failed to save tenant token")
-	}
-	if err := m.store.WriteAll(datastore.AuthServerURLName, []byte(serverURl)); err != nil {
-		return errors.Wrapf(err, "failed to save serverURL token")
-	}
+	//if err := m.store.WriteAll(datastore.AuthTokenName, data); err != nil {
+	//	return errors.Wrapf(err, "failed to save auth token")
+	//}
+	//log.Infof("men-3420 writing k:%s v:%s", datastore.AuthTenantTokenName, tenantToken)
+	//if err := m.store.WriteAll(datastore.AuthTenantTokenName, []byte(tenantToken)); err != nil {
+	//	return errors.Wrapf(err, "failed to save tenant token")
+	//}
+	//if err := m.store.WriteAll(datastore.AuthServerURLName, []byte(serverURl)); err != nil {
+	//	return errors.Wrapf(err, "failed to save serverURL token")
+	//}
 	return nil
 }
 
