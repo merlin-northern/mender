@@ -384,6 +384,10 @@ func (a *testAuthManager) AuthToken() (client.AuthToken, error) {
 	return a.authtoken, a.authtokenErr
 }
 
+func (a *testAuthManager) AuthTenantToken() (string, error) {
+	return "", a.authtokenErr
+}
+
 func (a *testAuthManager) HasKey() bool {
 	return a.haskey
 }
